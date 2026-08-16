@@ -1,4 +1,4 @@
-# expo-currency-switcher
+# expo-currency-switch
 
 A fintech currency switcher live rates, bidirectional amount input, and fluid motion throughout.
 

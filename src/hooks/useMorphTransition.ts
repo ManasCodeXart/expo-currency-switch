@@ -1,5 +1,3 @@
-// hooks/useMorphTransition.ts
-
 import { useEffect, useState } from "react";
 import type { ViewStyle } from "react-native";
 import {
@@ -12,16 +10,13 @@ import {
 } from "react-native-reanimated";
 
 interface UseMorphTransitionOptions {
-  /** Width of the content being morphed in, used to pivot the scale from its top-right corner. */
   width: number;
-  /** Height of the content being morphed in, used to pivot the scale from its top-right corner. */
   height: number;
-  /** Fires once the exit animation fully finishes — safe point to reset internal state. */
   onExited?: () => void;
 }
 
 interface UseMorphTransitionResult {
-  /** Stays true slightly past `visible={false}` so the exit animation can finish before unmount. */
+ 
   isMounted: boolean;
   contentStyle: AnimatedStyle<ViewStyle>;
   backdropStyle: AnimatedStyle<ViewStyle>;
@@ -52,10 +47,7 @@ export function useMorphTransition(
   const scaleX = useSharedValue(INITIAL_SCALE);
   const scaleY = useSharedValue(INITIAL_SCALE);
 
-  // Deliberately depends on `visible` only — `onExited` is read from the
-  // closure at the moment this effect fires, not tracked as a dependency.
-  // Adding it to the deps array would re-trigger the enter/exit animation
-  // any time the parent re-renders with a fresh inline callback.
+  
   useEffect(() => {
     if (visible) {
       setIsMounted(true);

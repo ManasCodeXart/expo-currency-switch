@@ -1,5 +1,3 @@
-// hooks/useExchangeRate.ts
-
 import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   UseExchangeRateOptions,
@@ -36,9 +34,7 @@ export function useExchangeRate(
   const activeRequestId = useRef(0);
   const lastCacheKey = useRef(cacheKey);
 
-  // When the requested currency pair changes, expose the cache value for the
-  // new pair (or null if it has never been fetched) instead of the previous
-  // pair's rate, so a stale/wrong-currency value is never shown even briefly.
+
   useEffect(() => {
     if (lastCacheKey.current === cacheKey) return;
     lastCacheKey.current = cacheKey;

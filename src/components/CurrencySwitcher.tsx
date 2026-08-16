@@ -43,12 +43,10 @@ const DEFAULT_SWAP_ICON_SIZE = verticalScale(16);
 const DEFAULT_FROM_CURRENCY_CODE = "USD";
 const DEFAULT_TO_CURRENCY_CODE = "INR";
 
-// Shrinks the displayed amount as its integer-digit count grows so wide values
-// never overflow the card. Decimals don't count toward the count.
-//   5 digits → 44 | 6 → 36 | 7 → 30 | 8+ → 25
-const BASE_AMOUNT_FONT_SIZE = verticalScale(44);
+
+const BASE_AMOUNT_FONT_SIZE = verticalScale(40);
 const SHRUNK_AMOUNT_FONT_SIZES = {
-  
+
   sixDigits: verticalScale(36),
   sevenDigits: verticalScale(30),
   eightPlusDigits: verticalScale(25),
@@ -71,18 +69,11 @@ const FONT_SIZE_TIMING = {
   easing: Easing.out(Easing.quad),
 } as const;
 
-// The currency symbol scales with the amount text so both always stay aligned.
-// Ratios (26/36 for size, 5/36 for baseline nudge) are applied on the UI
-// thread to whatever fontSize.value currently is, so the symbol tracks the
-// amount at every digit-count bucket, not just the base size.
+
 const SYMBOL_SIZE_RATIO = 26 / 36;
 const SYMBOL_MARGIN_RATIO = 5 / 36;
 
-// Owns the typography for one amount card: a shared value that eases to the
-// font size for the current digit count, plus styles for the amount and its
-// symbol (which derives from the amount on the UI thread, frame-perfectly in
-// sync). Send and receive cards each get their own instance so they scale
-// independently — e.g. USD → JPY produces very different digit counts.
+
 function useAmountTypography(value: string | null) {
   const fontSize = useSharedValue(computeAmountFontSize(value));
 
@@ -102,9 +93,7 @@ function useAmountTypography(value: string | null) {
   return { fontSize, amountStyle, symbolStyle };
 }
 
-// Blinks a caret while its host amount field is focused. Opacity toggles on a
-// half-second cycle; height mirrors the amount's animated font size on the UI
-// thread so it stays matched at every digit count.
+
 function useAmountCaret(fontSize: SharedValue<number>, isFocused: boolean) {
   const opacity = useSharedValue(1);
 
@@ -126,29 +115,16 @@ function useAmountCaret(fontSize: SharedValue<number>, isFocused: boolean) {
 
 interface CurrencySelectorProps {
   label: string;
-  accessibilityLabel: string;
   currency: Currency;
   pillRef: RefObject<View | null>;
   onPress: () => void;
 }
 
-function CurrencySelector({
-  label,
-  accessibilityLabel,
-  currency,
-  pillRef,
-  onPress,
-}: CurrencySelectorProps) {
+function CurrencySelector({ label, currency, pillRef, onPress }: CurrencySelectorProps) {
   return (
     <View style={styles.selectorGroup}>
       <Text style={styles.selectorLabel}>{label}</Text>
-      <TouchableOpacity
-        onPress={onPress}
-        activeOpacity={0.7}
-        role="button"
-        accessibilityLabel={accessibilityLabel}
-        accessibilityHint="Opens currency picker"
-      >
+      <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
         <View ref={pillRef} style={styles.currencyPill} collapsable={false}>
           <Image source={{ uri: getFlagUrl(currency.countryCode) }} style={styles.flag} />
           <Text style={styles.currencyCode}>{currency.code}</Text>
@@ -221,9 +197,7 @@ export function CurrencySwitcher({
 
   const numericActiveAmount = parseAmount(activeAmount);
 
-  // Controlled rate override: when the consumer passes an explicit `rate`, use
-  // it as-is and disable the hook so no fetch happens. Otherwise fetch live
-  // rates for the currently selected pair.
+
   const hasExplicitRate = rate !== undefined;
   const { rate: fetchedRate, isLoading: fetchedLoading } = useExchangeRate(
     fromCurrency.code,
@@ -233,9 +207,7 @@ export function CurrencySwitcher({
 
   const effectiveRate = hasExplicitRate ? rate : fetchedRate;
   const isRateFetching = hasExplicitRate ? isRateLoading : fetchedLoading;
-  // Guard the very first load for a never-cached pair: rate is null, so don't
-  // multiply into NaN/0. Refetches keep the last known rate visible.
-  const firstLoad = effectiveRate == null || effectiveRate === 0;
+  const firstLoad = effectiveRate === null;
 
   const numericSendAmount =
     activeField === "send"
@@ -278,12 +250,9 @@ export function CurrencySwitcher({
 
   const closePicker = useCallback(() => setPickerVisible(false), []);
 
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
 
-  // Tracks whether the soft keyboard is currently up. Kept as a guard so a
-  // rotation that lands mid-keyboard-hide (Android fires `keyboardDidHide`
-  // only after `Keyboard.dismiss()`'s ~250ms animation) doesn't close a picker
-  // that was just opened from a focused field.
+
   const isKeyboardVisibleRef = useRef(Keyboard.isVisible());
 
   useEffect(() => {
@@ -299,17 +268,13 @@ export function CurrencySwitcher({
     };
   }, []);
 
-  // Close the picker on device rotation so a stale anchor never leaves it
-  // floating at the old position. Width is tracked exclusively: on Android a
-  // software keyboard with `adjustResize` changes only the window height,
-  // never the width, so keyboard-driven resize can't race an opening picker —
-  // and true device rotation is exactly what changes width on a portrait phone.
+
   useEffect(() => {
     if (pickerVisible && !isKeyboardVisibleRef.current) {
       setTimeout(() => setPickerVisible(false), 0);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [width]);
+  }, [width, height]);
 
   const handleAmountChange = useCallback(
     (field: "send" | "receive", text: string) => {
@@ -317,10 +282,7 @@ export function CurrencySwitcher({
       setActiveField(field);
       setActiveAmount(sanitized);
 
-      // Preserve the existing onAmountChange contract: it always reports
-      // the SEND-side amount as a string, regardless of which field the
-      // user is physically typing into, so external consumers relying on
-      // this prop don't need to change.
+
       if (field === "send") {
         onAmountChange?.(sanitized);
       } else if (!firstLoad) {
@@ -334,22 +296,15 @@ export function CurrencySwitcher({
   const handleAmountFocus = useCallback(
     (field: "send" | "receive") => {
       setFocusedField(field);
-
-      // Re-tapping the already-active field must not clobber the user's
-      // in-progress text, so seeding only happens when authority actually
-      // switches to the field being focused.
-      if (activeField === field) return;
-
-      // Switching authority to the field the user just tapped into — seed
-      // its raw editable text with whatever value it was currently
-      // displaying (the derived/computed amount), so typing continues
-      // naturally from what's on screen instead of some stale value.
-      setActiveAmount(
-        field === "send" ? displaySendAmount : (receiveAmount ?? "0.00")
-      );
-      setActiveField(field);
+      setActiveField((prevActiveField) => {
+        if (prevActiveField === field) return prevActiveField;
+        setActiveAmount(
+          field === "send" ? displaySendAmount : (receiveAmount ?? "0.00")
+        );
+        return field;
+      });
     },
-    [activeField, displaySendAmount, receiveAmount]
+    [displaySendAmount, receiveAmount]
   );
 
   const handleAmountBlur = useCallback(() => {
@@ -398,7 +353,11 @@ export function CurrencySwitcher({
               {fromCurrency.symbol}
             </Animated.Text>
             <View style={styles.amountInputContainer}>
-              <Animated.Text style={[styles.amountInput, sendTypography.amountStyle]}>
+              <Animated.Text
+                style={[styles.amountInput, sendTypography.amountStyle]}
+                numberOfLines={1}
+                ellipsizeMode="clip"
+              >
                 {displaySendAmount}
               </Animated.Text>
               {focusedField === "send" ? (
@@ -406,7 +365,6 @@ export function CurrencySwitcher({
               ) : null}
               <TextInput
                 style={styles.amountInputHidden}
-                accessibilityLabel="Send amount"
                 value={activeField === "send" ? activeAmount : displaySendAmount}
                 onChangeText={(text) => handleAmountChange("send", text)}
                 onFocus={() => handleAmountFocus("send")}
@@ -421,7 +379,6 @@ export function CurrencySwitcher({
 
           <CurrencySelector
             label="You Sending"
-            accessibilityLabel="Select From currency"
             currency={fromCurrency}
             pillRef={fromPillRef}
             onPress={() => openPicker("from", fromPillRef)}
@@ -429,13 +386,7 @@ export function CurrencySwitcher({
         </Animated.View>
 
         <View style={styles.swapGap}>
-          <TouchableOpacity
-            onPress={handleSwap}
-            disabled={isSwapping}
-            activeOpacity={0.7}
-            role="button"
-            accessibilityLabel="Swap currencies"
-          >
+          <TouchableOpacity onPress={handleSwap} disabled={isSwapping} activeOpacity={0.7}>
             <View style={styles.swapButton}>
               {swapIcon ?? <SwapIcon size={DEFAULT_SWAP_ICON_SIZE} color="#FFFFFF" />}
             </View>
@@ -457,6 +408,8 @@ export function CurrencySwitcher({
                   receiveAmount === null ? styles.amountDisplayLoading : undefined,
                   receiveTypography.amountStyle,
                 ]}
+                numberOfLines={1}
+                ellipsizeMode="clip"
               >
                 {receiveAmount ?? "0.00"}
               </Animated.Text>
@@ -465,7 +418,6 @@ export function CurrencySwitcher({
               ) : null}
               <TextInput
                 style={styles.amountInputHidden}
-                accessibilityLabel="Receive amount"
                 value={activeField === "receive" ? activeAmount : (receiveAmount ?? "0.00")}
                 onChangeText={(text) => handleAmountChange("receive", text)}
                 onFocus={() => handleAmountFocus("receive")}
@@ -473,7 +425,7 @@ export function CurrencySwitcher({
                 keyboardType="decimal-pad"
                 maxLength={10}
                 selectionColor="#4A90FF"
-                editable={!firstLoad}
+                editable={!firstLoad || activeField === "receive"}
                 caretHidden
               />
             </View>
@@ -481,7 +433,6 @@ export function CurrencySwitcher({
 
           <CurrencySelector
             label="They Receive"
-            accessibilityLabel="Select To currency"
             currency={toCurrency}
             pillRef={toPillRef}
             onPress={() => openPicker("to", toPillRef)}
@@ -489,13 +440,7 @@ export function CurrencySwitcher({
         </Animated.View>
       </View>
 
-      <TouchableOpacity
-        style={styles.sendButton}
-        activeOpacity={0.85}
-        onPress={handleSend}
-        role="button"
-        accessibilityLabel="Send money"
-      >
+      <TouchableOpacity style={styles.sendButton} activeOpacity={0.85} onPress={handleSend}>
         <Text style={styles.sendText}>Send</Text>
       </TouchableOpacity>
 
@@ -504,16 +449,14 @@ export function CurrencySwitcher({
           <Text style={styles.infoValueGreen}>
             {firstLoad || isRateFetching
               ? "Fetching…"
-              : `1 ${fromCurrency.code} = ${toCurrency.symbol}${new Intl.NumberFormat("en-US", {
-                  maximumFractionDigits: 4,
-                }).format(effectiveRate)}`}
+              : `1 ${fromCurrency.code} = ${toCurrency.symbol}${effectiveRate.toFixed(4)}`}
           </Text>
         </InfoRow>
         <View style={styles.infoDivider} />
         <InfoRow label="Includes fees">
           <Text style={styles.infoValueRed}>
             {fromCurrency.symbol}
-            {fee.toFixed(2)}
+            {fee}
           </Text>
         </InfoRow>
         <View style={styles.infoDivider} />
@@ -543,7 +486,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: verticalScale(20),
     paddingTop: verticalScale(60),
   },
-  // overflow stays visible (default) so the two cards can pass over each other mid-swap
+ 
   stackContainer: {},
   cardBox: {
     backgroundColor: "#131313",
@@ -557,12 +500,12 @@ const styles = StyleSheet.create({
     marginBottom: verticalScale(8),
   },
   receiveCard: {
-    zIndex: 1, // send card stays visually on top while the two cross paths
+    zIndex: 1, 
   },
   swapGap: {
     alignItems: "center",
     justifyContent: "center",
-    zIndex: 10, // always above both cards regardless of animation state
+    zIndex: 10, 
     marginVertical: -verticalScale(19),
   },
   amountWrapper: {
@@ -572,9 +515,6 @@ const styles = StyleSheet.create({
   },
   currencySymbol: {
     color: "#FFF",
-    // fontSize and marginBottom are initial/fallback values only.
-    // The animated symbol styles override both on the UI thread, derived
-    // proportionally from the amount shared value.
     fontSize: verticalScale(26),
     fontFamily: "SpaceGroteskSemiBold",
     marginBottom: verticalScale(5),
@@ -582,12 +522,9 @@ const styles = StyleSheet.create({
   },
   amountInput: {
     color: "#FFF",
-    // fontSize is kept here as an initial/fallback value — the animated
-    // amount style applied on top wins once mounted.
     fontSize: verticalScale(40),
-    fontFamily: "SpaceGroteskBold",
+    fontFamily: "SpaceGroteskSemiBold",
     padding: 0,
-    minWidth: verticalScale(100),
   },
   amountInputContainer: {
     flex: 1,
@@ -612,7 +549,7 @@ const styles = StyleSheet.create({
   amountDisplay: {
     color: "#FFF",
     fontSize: verticalScale(36),
-    fontFamily: "SpaceGroteskBold",
+    fontFamily: "SpaceGroteskSemiBold",
   },
   amountDisplayLoading: {
     color: "#666",
@@ -626,7 +563,7 @@ const styles = StyleSheet.create({
     color: "#00FF88",
     fontSize: verticalScale(14),
     fontFamily: "SpaceGroteskSemiBold",
-    
+
   },
   currencyPill: {
     flexDirection: "row",

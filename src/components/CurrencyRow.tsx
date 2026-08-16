@@ -1,5 +1,3 @@
-// components/CurrencyRow.tsx
-
 import { memo } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { verticalScale } from "../constants/scaling";

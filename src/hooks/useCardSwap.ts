@@ -1,5 +1,3 @@
-// hooks/useCardSwap.ts
-
 import { useCallback, useRef, useState } from "react";
 import type { LayoutChangeEvent } from "react-native";
 import {
@@ -17,8 +15,7 @@ export function useCardSwap() {
   const firstCardTranslateY = useSharedValue(0);
   const secondCardTranslateY = useSharedValue(0);
 
-  // Ref-based re-entry guard: a ref is synchronous, so a second tap in the
-  // same tick can't slip past the check the way a state read could.
+ 
   const isAnimatingRef = useRef(false);
   const [isSwapping, setIsSwapping] = useState(false);
 

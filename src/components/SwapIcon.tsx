@@ -1,5 +1,3 @@
-// assets/icons/SwapIcon.tsx
-
 import Svg, { Path } from "react-native-svg";
 
 interface SwapIconProps {

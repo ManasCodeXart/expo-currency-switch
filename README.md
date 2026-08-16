@@ -2,7 +2,8 @@
 
 A fintech currency switcher live rates, bidirectional amount input, and fluid motion throughout.
 
-<img width="1080" height="1080" alt="export-1786865338693-ezgif com-video-to-gif-converter" src="https://github.com/user-attachments/assets/3c0ce030-9916-420a-860b-4046ac2690b4" />
+<img width="1280" height="720" alt="km_20260816-1_1080p_30f_20260816_131240-ezgif com-video-to-gif-converter" src="https://github.com/user-attachments/assets/3f056a85-6da1-4fb8-af05-7d4a0f2f9f3e" />
+
 
 
 ---

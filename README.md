@@ -1,6 +1,6 @@
 # expo-currency-switcher
 
-A Wise-style currency switcher — live exchange rates, animated card swap, and a morph-transition picker — built for fintech apps.
+A fintech-grade currency switcher live rates, bidirectional amount input, and fluid motion throughout.
 
 <!-- HERO GIF PLACEHOLDER -->
 <!-- Replace with: <img width="1280" height="720" alt="currency-switcher" src="YOUR_HERO_GIF_URL" /> -->

@@ -1,56 +1,179 @@
-# Welcome to your Expo app 👋
+# expo-currency-switcher
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A Wise-style currency switcher — live exchange rates, animated card swap, and a morph-transition picker — built for fintech apps.
 
-## Get started
+<!-- HERO GIF PLACEHOLDER -->
+<!-- Replace with: <img width="1280" height="720" alt="currency-switcher" src="YOUR_HERO_GIF_URL" /> -->
 
-1. Install dependencies
+---
 
-   ```bash
-   npm install
-   ```
+## ✨ Features
 
-2. Start the app
+- 💱 **Bidirectional amount input** — edit either the send or receive field; the opposite amount updates live from the current exchange rate
+- 🔄 **Spring-physics card swap** — from/to currencies animate past each other with a double-tap guard so rapid taps never corrupt state
+- 🌍 **Live exchange rates** — fetches from the [Frankfurter API](https://frankfurter.dev) out of the box, with a 15-minute in-memory cache and stale-request cancellation
+- 🔌 **Injectable rate source** — swap out Frankfurter for any backend by passing a `fetcher` function; or skip the network entirely by passing `rate` directly as a prop
+- 🎭 **Morph-transition picker** — the currency dropdown spring-scales from its pill anchor on open and collapses back on dismiss, no jarring cuts
+- 🔍 **Searchable currency list** — filter by code or country name, with a double-select guard
+- 📐 **Adaptive amount typography** — font size steps down across four buckets as digit count grows, so wide values never overflow the card
+- 🧠 **TypeScript-first** — fully typed props, `ExchangeRateFetcher` as a named injectable type, structured `onSend` detail object
 
-   ```bash
-   npx expo start
-   ```
+---
 
-In the output, you'll find options to open the app in a
+## ⚙️ Installation
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+This isn't published as an npm package yet — copy the source directly into your project.
 
 ```bash
-npm run reset-project
+git clone https://github.com/ManasCodeXart/expo-currency-switch.git
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Copy `components/`, `constants/`, `hooks/`, `providers/`, and `utils/` from `src/` into your project, then install the peer dependencies:
 
-### Other setup steps
+```bash
+npx expo install react-native-reanimated react-native-worklets react-native-svg
+```
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+> Reanimated 4.x ships its worklets runtime as the separate `react-native-worklets` package — it's required alongside `react-native-reanimated`, not optional.
 
-## Learn more
+> Requires `react-native-reanimated`'s Babel plugin already configured. No `react-native-gesture-handler` needed for this component.
 
-To learn more about developing your project with Expo, look at the following resources:
+---
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## 🚀 Usage
 
-## Join the community
+```tsx
+import { CurrencySwitcher } from './components/CurrencySwitcher';
 
-Join our community of developers creating universal apps.
+export function PaymentScreen() {
+  return (
+    <CurrencySwitcher
+      onCurrencyChange={(from, to) => console.log(from.code, '→', to.code)}
+      onSend={(details) => console.log('Send', details)}
+    />
+  );
+}
+```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+### Bring your own rate source
+
+```tsx
+// Pass a static or externally-fetched rate — skips the Frankfurter fetch entirely
+<CurrencySwitcher
+  rate={83.12}
+  isRateLoading={false}
+  onSend={(details) => sendPayment(details)}
+/>
+```
+
+```tsx
+// Or inject a custom fetcher (e.g. your own backend) directly into the hook
+import { useExchangeRate } from './hooks/useExchangeRate';
+
+const { rate, isLoading, error, refresh } = useExchangeRate('USD', 'INR', {
+  fetcher: (base, target) => myApi.getRate(base, target),
+  cacheTtlMs: 5 * 60 * 1000,
+});
+```
+
+## Preview
+
+<!-- PREVIEW VIDEO PLACEHOLDER -->
+<!-- Paste your GitHub video embed here, e.g.: -->
+<!-- https://github.com/user-attachments/assets/YOUR_VIDEO_ID -->
+
+---
+
+## 🧱 Component Anatomy
+
+```
+<CurrencySwitcher>
+  ├─ CurrencyPicker     (morph-transition currency search dropdown)
+  │   └─ CurrencyRow    (flag + code + name + selection row)
+  └─ SwapIcon           (bidirectional arrow icon)
+```
+
+`CurrencyPicker` and `CurrencyRow` are also exported individually if you need them outside the switcher.
+
+---
+
+## 🧩 API
+
+### `<CurrencySwitcher>`
+
+| Prop | Type | Default | Description |
+|---|---|---|---|
+| `currencies` | `readonly Currency[]` | built-in list | The currency list shown in both pickers. |
+| `defaultFromCurrency` | `Currency` | `USD` | Currency shown in the send card on first render. |
+| `defaultToCurrency` | `Currency` | `INR` | Currency shown in the receive card on first render. |
+| `defaultSendAmount` | `string` | `"300"` | Amount pre-filled in the send field on first render. |
+| `rate` | `number` | — | Pass an explicit rate to skip the internal Frankfurter fetch entirely. |
+| `isRateLoading` | `boolean` | — | When using an external `rate`, set this while your rate loads to show the "Fetching…" state. |
+| `fee` | `number` | `76.87` | Transaction fee displayed in the info section. |
+| `arrivalEstimate` | `string` | `"By Friday"` | Arrival estimate string displayed in the info section. |
+| `swapIcon` | `ReactNode` | built-in `<SwapIcon />` | Replace the swap button icon with any node. |
+| `style` | `StyleProp<ViewStyle>` | — | Additional styles applied to the root container. |
+| `onAmountChange` | `(amount: string) => void` | — | Fires on every keystroke with the implied send-side amount as a string. |
+| `onCurrencyChange` | `(from: Currency, to: Currency) => void` | — | Fires when either currency is changed or the cards are swapped. |
+| `onSend` | `(details: { amount: number; from: Currency; to: Currency }) => void` | — | Fires on Send tap with the current send amount and both currencies. |
+
+### `<CurrencyPicker>`
+
+| Prop | Type | Default | Description |
+|---|---|---|---|
+| `visible` | `boolean` | — | Controls open/close. Morph-animates in and out automatically. |
+| `anchorPosition` | `AnchorPosition \| null` | — | Screen position of the pill that triggered the picker, used to anchor the dropdown. |
+| `selectedCode` | `string` | — | The currently selected currency code. Highlighted in the list. |
+| `currencies` | `readonly Currency[]` | — | The full list to render and filter. |
+| `onSelect` | `(currency: Currency) => void` | — | Fired once per selection; double-select is guarded internally. |
+| `onClose` | `() => void` | — | Fired on backdrop tap or after a selection. |
+
+### `useExchangeRate`
+
+```ts
+const { rate, isLoading, error, refresh } = useExchangeRate(base, target, options);
+```
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `fetcher` | `ExchangeRateFetcher` | Frankfurter | Any `(base, target) => Promise<number>` function. |
+| `cacheTtlMs` | `number` | `900000` (15 min) | How long a cached rate is considered fresh before the next mount triggers a refetch. |
+| `enabled` | `boolean` | `true` | Set to `false` to skip fetching entirely — used internally when the `rate` prop is provided. |
+
+### Types
+
+```ts
+interface Currency {
+  readonly code: string;
+  readonly symbol: string;
+  readonly name: string;
+  readonly countryCode: string; // ISO 3166-1 alpha-2, used for flag CDN lookup
+}
+
+type ExchangeRateFetcher = (base: string, target: string) => Promise<number>;
+
+interface AnchorPosition {
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+}
+```
+
+---
+
+## 🔤 Fonts
+
+Text elements use the **Space Grotesk** family (`SpaceGroteskMedium`, `SpaceGroteskSemiBold`, `SpaceGroteskBold`) by name. If you don't load these yourself via `expo-font` / `useFonts`, React Native falls back to the system font silently — everything still works, you'll just get system-font weights instead of Space Grotesk. Load the family under those exact names if you want the intended look.
+
+---
+
+## 📄 License
+
+MIT — see [LICENSE](./LICENSE).
+
+---
+
+## 🧱 Stack
+
+[Expo SDK 57](https://expo.dev/changelog) · [React Native 0.86](https://reactnative.dev/) · [Reanimated 4.5](https://docs.swmansion.com/react-native-reanimated/) · [React Native Worklets 0.10](https://docs.swmansion.com/react-native-reanimated/) · [react-native-svg 15.15](https://github.com/software-mansion/react-native-svg)

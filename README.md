@@ -1,9 +1,9 @@
 # expo-currency-switcher
 
-A fintech-grade currency switcher live rates, bidirectional amount input, and fluid motion throughout.
+A fintech currency switcher live rates, bidirectional amount input, and fluid motion throughout.
 
-<!-- HERO GIF PLACEHOLDER -->
-<!-- Replace with: <img width="1280" height="720" alt="currency-switcher" src="YOUR_HERO_GIF_URL" /> -->
+<img width="1080" height="1080" alt="export-1786865338693-ezgif com-video-to-gif-converter" src="https://github.com/user-attachments/assets/3c0ce030-9916-420a-860b-4046ac2690b4" />
+
 
 ---
 
@@ -78,9 +78,11 @@ const { rate, isLoading, error, refresh } = useExchangeRate('USD', 'INR', {
 
 ## Preview
 
-<!-- PREVIEW VIDEO PLACEHOLDER -->
-<!-- Paste your GitHub video embed here, e.g.: -->
-<!-- https://github.com/user-attachments/assets/YOUR_VIDEO_ID -->
+
+
+https://github.com/user-attachments/assets/87ff401a-4c82-4409-ab15-6ae1a4d3aa6f
+
+
 
 ---
 
